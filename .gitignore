@@ -4,3 +4,5 @@ __pycache__/
 *.pyc
 dump_*.json
 dump_*.txt
+history_*.txt
+matches.db

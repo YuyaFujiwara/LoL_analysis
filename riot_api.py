@@ -1,5 +1,6 @@
 import os
 import requests
+import db
 from urllib.parse import quote
 
 class RiotAPIClient:
@@ -38,20 +39,46 @@ class RiotAPIClient:
         return response.json()
 
     def get_match_ids_by_puuid(self, puuid: str, start: int = 0, count: int = 10) -> list:
-        """Get recent match IDs (Ranked matches only)."""
-        url = f"https://{self.routing_region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={start}&count={count}&type=ranked"
-        response = requests.get(url, headers=self.headers)
-        response.raise_for_status()
-        return response.json()
+        """Get recent match IDs (Ranked matches only), handles count > 100 by paginating."""
+        all_match_ids = []
+        remaining = count
+        current_start = start
+        
+        while remaining > 0:
+            fetch_count = min(remaining, 100)
+            url = f"https://{self.routing_region}.api.riotgames.com/lol/match/v5/matches/by-puuid/{puuid}/ids?start={current_start}&count={fetch_count}&type=ranked"
+            response = requests.get(url, headers=self.headers)
+            response.raise_for_status()
+            
+            ids = response.json()
+            if not ids:
+                break
+                
+            all_match_ids.extend(ids)
+            current_start += fetch_count
+            remaining -= fetch_count
+            
+        return all_match_ids
 
     def get_match_by_id(self, match_id: str) -> dict:
         """Get detailed match info."""
+        cached_match = db.get_match_from_db(match_id)
+        if cached_match:
+            print(f"      [DB Cache Hit] {match_id}")
+            return cached_match
+
         url = f"https://{self.routing_region}.api.riotgames.com/lol/match/v5/matches/{match_id}"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
-        return response.json()
+        match_data = response.json()
+        
+        # Save to DB
+        game_creation = match_data.get('info', {}).get('gameCreation', 0)
+        db.save_match_to_db(match_id, game_creation, match_data)
+        
+        return match_data
 
-    def get_player_full_profile(self, game_name: str, tag_line: str, match_count: int = 5) -> dict:
+    def get_player_full_profile(self, game_name: str, tag_line: str, match_count: int = 5, start_index: int = 0) -> dict:
         """Aggregates all relevant data for a player to simulate OP.GG."""
         print(f"Fetching account info for {game_name}#{tag_line}...")
         account = self.get_account_by_riot_id(game_name, tag_line)
@@ -59,12 +86,12 @@ class RiotAPIClient:
 
         print("Fetching summoner profile...")
         summoner = self.get_summoner_by_puuid(puuid)
-
+        
         print("Fetching ranked entries...")
         ranked_entries = self.get_league_entries_by_puuid(puuid)
 
-        print(f"Fetching last {match_count} matches...")
-        match_ids = self.get_match_ids_by_puuid(puuid, count=match_count)
+        print(f"Fetching {match_count} matches (starting from offset {start_index})...")
+        match_ids = self.get_match_ids_by_puuid(puuid, start=start_index, count=match_count)
         
         matches_data = []
         for i, m_id in enumerate(match_ids):
@@ -94,6 +121,7 @@ class RiotAPIClient:
                         "goldEarned": p.get('goldEarned', 0),
                         "soloKills": p.get('challenges', {}).get('soloKills', 0),
                         "dmgShare": round(p.get('challenges', {}).get('teamDamagePercentage', 0) * 100, 1),
+                        "cs": p.get('totalMinionsKilled', 0) + p.get('neutralMinionsKilled', 0),
                         "cs10m": p.get('challenges', {}).get('laneMinionsFirst10Minutes', 0),
                         "objDmg": p.get('damageDealtToObjectives', 0),
                         "wards": p.get('visionWardsBoughtInGame', 0)

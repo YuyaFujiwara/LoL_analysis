@@ -65,12 +65,12 @@ class LoLAnalyzer:
                 prompt += "[味方チーム]\n"
                 for p in ally_team:
                     pkda = f"{p['kills']}/{p['deaths']}/{p['assists']}"
-                    prompt += f"  - {p['role']}: {p['champion']} (KDA: {pkda}, 与ダメ: {p.get('damageDealt', 0)} [{p.get('dmgShare', 0)}%], 対物: {p.get('objDmg', 0)}, G: {p.get('goldEarned', 0)}, ソロ: {p.get('soloKills', 0)})\n"
+                    prompt += f"  - {p['role']}: {p['champion']} (KDA: {pkda}, CS: {p.get('cs', 0)} [{p.get('cs10m', 0)}], 与ダメ: {p.get('damageDealt', 0)} [{p.get('dmgShare', 0)}%], 対物: {p.get('objDmg', 0)}, G: {p.get('goldEarned', 0)}, ソロ: {p.get('soloKills', 0)})\n"
                 
                 prompt += "[敵チーム]\n"
                 for p in enemy_team:
                     pkda = f"{p['kills']}/{p['deaths']}/{p['assists']}"
-                    prompt += f"  - {p['role']}: {p['champion']} (KDA: {pkda}, 与ダメ: {p.get('damageDealt', 0)} [{p.get('dmgShare', 0)}%], 対物: {p.get('objDmg', 0)}, G: {p.get('goldEarned', 0)}, ソロ: {p.get('soloKills', 0)})\n"
+                    prompt += f"  - {p['role']}: {p['champion']} (KDA: {pkda}, CS: {p.get('cs', 0)} [{p.get('cs10m', 0)}], 与ダメ: {p.get('damageDealt', 0)} [{p.get('dmgShare', 0)}%], 対物: {p.get('objDmg', 0)}, G: {p.get('goldEarned', 0)}, ソロ: {p.get('soloKills', 0)})\n"
 
         prompt += "\nこのデータに基づいて、プレイヤーとしての強み、弱み、傾向、改善点などを、コーチのように詳しく分析してアドバイスを日本語で提供してください。\n"
         prompt += "以下の点に特に注目して深く分析してください：\n"

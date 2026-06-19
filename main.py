@@ -27,13 +27,17 @@ def main():
         print("エラー: Riot IDは '名前#タグ' の形式で入力してください。")
         sys.exit(1)
         
-    mode_input = input("実行モードを選んでください (1: AI分析, 2: JSONダンプ) [1]: ").strip()
+    mode_input = input("実行モードを選んでください (1: AI分析, 2: JSONダンプ, 3: 過去データの一括テキスト化) [1]: ").strip()
     
-    match_count_input = input("取得する試合数を入力してください (デフォルト: 10): ").strip()
-    match_count = int(match_count_input) if match_count_input.isdigit() else 10
+    default_count = 100 if mode_input == "3" else 10
+    match_count_input = input(f"取得する試合数を入力してください (デフォルト: {default_count}): ").strip()
+    match_count = int(match_count_input) if match_count_input.isdigit() else default_count
+    
+    start_index_input = input("何試合前から取得しますか？ (直近からなら0、10試合前からなら10) [0]: ").strip()
+    start_index = int(start_index_input) if start_index_input.isdigit() else 0
     
     user_topic = ""
-    if mode_input != "2":
+    if mode_input == "1" or mode_input == "":
         user_topic = input("分析のテーマや特に聞きたいことはありますか？ (空欄でEnterを押すと全体的な分析をします): ").strip()
         
     game_name, tag_line = riot_id_input.split("#", 1)
@@ -46,7 +50,7 @@ def main():
         
         # 1. Fetch data from Riot API
         print(f"\n[{game_name}#{tag_line}] のデータをRiot APIから取得しています...")
-        player_data = riot_client.get_player_full_profile(game_name, tag_line, match_count=match_count)
+        player_data = riot_client.get_player_full_profile(game_name, tag_line, match_count=match_count, start_index=start_index)
         
         # Always dump data
         dump_filename = f"dump_{game_name}.json"
@@ -54,13 +58,17 @@ def main():
             json.dump(player_data, f, ensure_ascii=False, indent=2)
             
         text_dump_filename = f"dump_{game_name}.txt"
+        if mode_input == "3":
+            text_dump_filename = f"history_{game_name}_{match_count}matches.txt"
+            
         with open(text_dump_filename, "w", encoding="utf-8") as f:
             compact_text = ai_analyzer.format_data_for_prompt(player_data)
             f.write(compact_text)
             
-        if mode_input == "2":
+        if mode_input in ["2", "3"]:
             print(f"\n✅ データを保存しました！")
-            print(f"  - {dump_filename} (生の全データ)")
+            if mode_input == "2":
+                print(f"  - {dump_filename} (生の全データ)")
             print(f"  - {text_dump_filename} (AI送信用に極限までコンパクトに整形したテキスト)")
         else:
             # 2. Analyze data with Gemini API
