@@ -16,6 +16,18 @@ class RiotAPIClient:
         self.headers = {
             "X-Riot-Token": self.api_key
         }
+        
+        # Load DataDragon champion mapping
+        try:
+            versions_resp = requests.get("https://ddragon.leagueoflegends.com/api/versions.json")
+            latest_version = versions_resp.json()[0]
+            champ_resp = requests.get(f"https://ddragon.leagueoflegends.com/cdn/{latest_version}/data/en_US/champion.json")
+            champ_data = champ_resp.json()["data"]
+            # Map champion key (ID) to Name
+            self.champion_id_to_name = {int(v["key"]): v["name"] for k, v in champ_data.items()}
+        except Exception as e:
+            print(f"Warning: Failed to load DataDragon champion data: {e}")
+            self.champion_id_to_name = {}
 
     def get_account_by_riot_id(self, game_name: str, tag_line: str) -> dict:
         """Get account info (PUUID) by Riot ID."""
@@ -32,11 +44,30 @@ class RiotAPIClient:
         return response.json()
 
     def get_league_entries_by_puuid(self, puuid: str) -> list:
-        """Get ranked stats by PUUID."""
+        """Get ranked information by PUUID."""
         url = f"https://{self.region}.api.riotgames.com/lol/league/v4/entries/by-puuid/{puuid}"
         response = requests.get(url, headers=self.headers)
         response.raise_for_status()
         return response.json()
+
+    def get_champion_mastery_by_puuid(self, puuid: str) -> list:
+        """Get champion mastery for a player."""
+        cached_mastery = db.get_mastery_from_db(puuid)
+        if cached_mastery:
+            print("      [DB Cache Hit] Mastery")
+            return cached_mastery
+
+        url = f"https://{self.region}.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-puuid/{puuid}"
+        response = requests.get(url, headers=self.headers)
+        response.raise_for_status()
+        mastery_data = response.json()
+        
+        # Inject champion names
+        for item in mastery_data:
+            item['championName'] = self.champion_id_to_name.get(item['championId'], "Unknown")
+            
+        db.save_mastery_to_db(puuid, mastery_data)
+        return mastery_data
 
     def get_match_ids_by_puuid(self, puuid: str, start: int = 0, count: int = 10) -> list:
         """Get recent match IDs (Ranked matches only), handles count > 100 by paginating."""
@@ -78,7 +109,7 @@ class RiotAPIClient:
         
         return match_data
 
-    def get_player_full_profile(self, game_name: str, tag_line: str, match_count: int = 5, start_index: int = 0) -> dict:
+    def get_player_full_profile(self, game_name: str, tag_line: str, match_count: int = 5, start_index: int = 0, fetch_mastery: bool = False) -> dict:
         """Aggregates all relevant data for a player to simulate OP.GG."""
         print(f"Fetching account info for {game_name}#{tag_line}...")
         account = self.get_account_by_riot_id(game_name, tag_line)
@@ -89,6 +120,12 @@ class RiotAPIClient:
         
         print("Fetching ranked entries...")
         ranked_entries = self.get_league_entries_by_puuid(puuid)
+
+        top_mastery = []
+        if fetch_mastery:
+            print("Fetching champion mastery...")
+            mastery_data = self.get_champion_mastery_by_puuid(puuid)
+            top_mastery = mastery_data[:3] if mastery_data else []
 
         print(f"Fetching {match_count} matches (starting from offset {start_index})...")
         match_ids = self.get_match_ids_by_puuid(puuid, start=start_index, count=match_count)
@@ -187,6 +224,7 @@ class RiotAPIClient:
             "account": account,
             "summonerLevel": summoner['summonerLevel'],
             "ranked": ranked_entries,
+            "mastery": top_mastery,
             "recent_matches": matches_data
         }
 

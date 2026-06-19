@@ -171,6 +171,13 @@ input:focus, select:focus { border-color: var(--accent); }
 /* Match History (Left Col) */
 .profile-header {
     display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+.profile-top-row {
+    display: flex;
     align-items: center;
     gap: 1.5rem;
     margin-bottom: 1.5rem;
@@ -188,6 +195,60 @@ input:focus, select:focus { border-color: var(--accent); }
 }
 .profile-info h1 { font-family: 'Outfit'; margin-bottom: 0.2rem; }
 .profile-info p { color: var(--text-muted); font-size: 0.9rem; }
+
+/* Mastery Section */
+.mastery-section {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+.mastery-section h3 {
+    font-size: 0.9rem;
+    color: var(--accent);
+    margin-bottom: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.mastery-list {
+    display: flex;
+    gap: 1rem;
+    justify-content: space-around;
+}
+.mastery-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
+.mastery-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: #1e1e2e;
+    border: 2px solid #ffd700;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+}
+.mastery-details {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.mastery-level {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #ffd700;
+}
+.mastery-points {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+}
 
 .match-list {
     display: flex;

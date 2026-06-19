@@ -33,6 +33,9 @@
                     <input type="text" id="riot_id" placeholder="Riot IDを入力 (例: Hide on bush#KR1)" required>
                     <input type="number" id="match_count" value="10" min="1" max="100" title="取得する試合数">
                     <input type="number" id="start_index" value="0" min="0" title="何試合前からか (0で直近)">
+                    <label style="display:flex; align-items:center; gap:5px; font-size:0.9rem; color:var(--text-muted); cursor:pointer;">
+                        <input type="checkbox" id="fetch_mastery" style="width:auto; padding:0; margin:0;"> マスタリーも取得
+                    </label>
                     <button type="submit" id="search-btn" class="glow-button sm-btn">
                         <span class="btn-text">検索</span>
                         <div class="loader hidden" id="search-loader"></div>

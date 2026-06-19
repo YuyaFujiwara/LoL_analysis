@@ -6,3 +6,4 @@ dump_*.json
 dump_*.txt
 history_*.txt
 matches.db
+mastery_*

@@ -80,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const riot_id = riotIdInput.value;
         const match_count = document.getElementById('match_count').value;
         const start_index = document.getElementById('start_index').value;
+        const fetch_mastery = document.getElementById('fetch_mastery').checked;
 
         searchBtn.disabled = true;
         searchLoader.classList.remove('hidden');
@@ -90,7 +91,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const res = await fetch('/api/search', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ riot_id, match_count, start_index })
+                body: JSON.stringify({ riot_id, match_count, start_index, fetch_mastery })
             });
             const data = await res.json();
 
@@ -116,12 +117,33 @@ document.addEventListener('DOMContentLoaded', () => {
             ? `${playerData.ranked[0].tier} ${playerData.ranked[0].rank} (${playerData.ranked[0].leaguePoints} LP)`
             : 'Unranked';
 
+        let masteryHtml = '';
+        if (playerData.mastery && playerData.mastery.length > 0) {
+            masteryHtml = '<div class="mastery-section"><h3>Top Champions</h3><div class="mastery-list">';
+            playerData.mastery.forEach(m => {
+                const points = m.championPoints.toLocaleString();
+                masteryHtml += `
+                    <div class="mastery-item">
+                        <div class="mastery-icon">${m.championName}</div>
+                        <div class="mastery-details">
+                            <span class="mastery-level">Lv ${m.championLevel}</span>
+                            <span class="mastery-points">${points} pts</span>
+                        </div>
+                    </div>
+                `;
+            });
+            masteryHtml += '</div></div>';
+        }
+
         profileHeader.innerHTML = `
-            <div class="profile-icon">👤</div>
-            <div class="profile-info">
-                <h1>${riotId}</h1>
-                <p>Level: ${playerData.summonerLevel} | Rank: <span style="color:var(--accent); font-weight:bold;">${winrate}</span></p>
+            <div class="profile-top-row">
+                <div class="profile-icon">👤</div>
+                <div class="profile-info">
+                    <h1>${riotId}</h1>
+                    <p>Level: ${playerData.summonerLevel} | Rank: <span style="color:var(--accent); font-weight:bold;">${winrate}</span></p>
+                </div>
             </div>
+            ${masteryHtml}
         `;
 
         // Render Match List

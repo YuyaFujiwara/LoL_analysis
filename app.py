@@ -1,7 +1,9 @@
 import os
 import json
 import traceback
+# pyrefly: ignore [missing-import]
 from flask import Flask, render_template, request, jsonify
+# pyrefly: ignore [missing-import]
 from dotenv import load_dotenv
 
 from riot_api import RiotAPIClient
@@ -58,6 +60,7 @@ def search_player():
     riot_id = data.get("riot_id", "")
     match_count = int(data.get("match_count", 10))
     start_index = int(data.get("start_index", 0))
+    fetch_mastery = data.get("fetch_mastery", False)
 
     if "#" not in riot_id:
         return jsonify({"success": False, "error": "Riot ID は '名前#タグ' の形式で入力してください。"})
@@ -69,12 +72,21 @@ def search_player():
         ai_analyzer = LoLAnalyzer(GEMINI_API_KEY, model_id=GEMINI_MODEL)
         
         # Fetch data (will be cached)
-        player_data = riot_client.get_player_full_profile(game_name, tag_line, match_count=match_count, start_index=start_index)
+        player_data = riot_client.get_player_full_profile(game_name, tag_line, match_count=match_count, start_index=start_index, fetch_mastery=fetch_mastery)
         
         # Save JSON dump as backup
         dump_filename = f"dump_{game_name}.json"
         with open(dump_filename, "w", encoding="utf-8") as f:
             json.dump(player_data, f, ensure_ascii=False, indent=2)
+
+        if fetch_mastery:
+            # Dump compact mastery data
+            puuid = player_data['account']['puuid']
+            full_mastery = riot_client.get_champion_mastery_by_puuid(puuid)
+            mastery_filename = f"mastery_{game_name}.txt"
+            with open(mastery_filename, "w", encoding="utf-8") as f:
+                for m in full_mastery:
+                    f.write(f"{m.get('championName', 'Unknown')} (Lv.{m.get('championLevel', 0)}) - {m.get('championPoints', 0):,} pts\n")
 
         # Format compact text
         compact_text = ai_analyzer.format_data_for_prompt(player_data)
