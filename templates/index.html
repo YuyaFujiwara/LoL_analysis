@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL AI Analyst Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="background-animated"></div>
+    
+    <nav class="topbar">
+        <div class="logo">
+            <span class="glow-text sm">LoL AI Analyst</span>
+        </div>
+        <div class="saved-profiles">
+            <select id="saved_profiles_select">
+                <option value="">-- お気に入りから選択 --</option>
+            </select>
+            <button id="add_bookmark_btn" title="現在のIDをお気に入りに追加">⭐</button>
+            <button id="remove_bookmark_btn" title="現在のIDをお気に入りから削除">❌</button>
+        </div>
+    </nav>
+
+    <div class="container main-container">
+        <!-- Search Section -->
+        <div class="glass-panel search-panel">
+            <form id="search-form">
+                <div class="search-row">
+                    <input type="text" id="riot_id" placeholder="Riot IDを入力 (例: Hide on bush#KR1)" required>
+                    <input type="number" id="match_count" value="10" min="1" max="100" title="取得する試合数">
+                    <input type="number" id="start_index" value="0" min="0" title="何試合前からか (0で直近)">
+                    <button type="submit" id="search-btn" class="glow-button sm-btn">
+                        <span class="btn-text">検索</span>
+                        <div class="loader hidden" id="search-loader"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="dashboard-layout hidden" id="dashboard-layout">
+            <!-- Left Column: OP.GG Style Match History -->
+            <div class="left-col">
+                <div class="glass-panel profile-header" id="profile-header">
+                    <!-- Profile info injected here -->
+                </div>
+                
+                <div class="match-list" id="match-list">
+                    <!-- Match cards injected here -->
+                </div>
+            </div>
+
+            <!-- Right Column: AI Coaching -->
+            <div class="right-col">
+                <div class="glass-panel ai-panel">
+                    <h2>🤖 AI コーチング</h2>
+                    <p class="subtitle">上記の試合データをもとにAIが分析します</p>
+                    
+                    <div class="input-group" style="margin-top: 1rem;">
+                        <input type="text" id="theme" placeholder="分析テーマ (例: 序盤の動き)">
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button id="analyze-btn" class="glow-button analyze-btn">
+                            <span class="btn-text">分析開始</span>
+                            <div class="loader hidden" id="analyze-loader"></div>
+                        </button>
+                        <button id="copy-data-btn" class="glow-button secondary-btn" title="LLM用に整形された生データをコピー">
+                            📋 生データをコピー
+                        </button>
+                    </div>
+
+                    <div class="result-container hidden" id="result-container">
+                        <div class="result-header">
+                            <h3>Analysis Result</h3>
+                            <button id="copy-result-btn" class="icon-btn" title="結果をコピー">📋</button>
+                        </div>
+                        <div class="markdown-body" id="result-content"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

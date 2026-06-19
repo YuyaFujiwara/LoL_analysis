@@ -105,6 +105,14 @@ class RiotAPIClient:
                     player_match_stats = participant
                     break
             
+            # Fallback for account transfers/merges where match history retains an old PUUID
+            if not player_match_stats:
+                for participant in match_data['info']['participants']:
+                    p_name = participant.get('riotIdGameName', participant.get('summonerName', ''))
+                    if p_name.lower() == game_name.lower():
+                        player_match_stats = participant
+                        break
+            
             if player_match_stats:
                 ally_team = []
                 enemy_team = []

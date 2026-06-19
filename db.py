@@ -14,6 +14,33 @@ def init_db():
             raw_json TEXT
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS saved_profiles (
+            riot_id TEXT PRIMARY KEY
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+def get_saved_profiles() -> list:
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('SELECT riot_id FROM saved_profiles')
+    rows = cursor.fetchall()
+    conn.close()
+    return [row[0] for row in rows]
+
+def add_saved_profile(riot_id: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('INSERT OR IGNORE INTO saved_profiles (riot_id) VALUES (?)', (riot_id,))
+    conn.commit()
+    conn.close()
+
+def remove_saved_profile(riot_id: str):
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute('DELETE FROM saved_profiles WHERE riot_id = ?', (riot_id,))
     conn.commit()
     conn.close()
 
